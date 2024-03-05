@@ -1,0 +1,23 @@
+{
+  "summary": "A concise summary of the terms and conditions.",
+  "sections": [
+    {
+      "id": "0",
+      "title": "Privacy Policy",
+      "content": "Highlighted section related to privacy policy.",
+      "risk": {
+        "level": "Low",
+        "explanation": "Explanation of the risk related to the privacy policy."
+      }
+    },
+    {
+      "id": "1",
+      "title": "Liability",
+      "content": "Highlighted section related to liability.",
+      "risk": {
+        "level": "High",
+        "explanation": "Explanation of the risk related to liability."
+      }
+    }
+  ]
+}
