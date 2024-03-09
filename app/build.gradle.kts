@@ -75,4 +75,6 @@ dependencies {
     kapt("androidx.room:room-compiler:2.6.1")
     implementation("com.google.code.gson:gson:2.8.9")
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9")
+
 }

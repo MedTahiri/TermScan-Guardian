@@ -7,6 +7,7 @@ import android.graphics.ImageDecoder
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
@@ -33,11 +34,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -80,6 +76,7 @@ import com.mohamed.tahiri.termscanguardian.data.Resulta
 import com.mohamed.tahiri.termscanguardian.database.Data
 import com.mohamed.tahiri.termscanguardian.database.DataModelViewModel
 import com.mohamed.tahiri.termscanguardian.screen
+import com.mohamed.tahiri.termscanguardian.ui.getNameFromFile
 import com.mohamed.tahiri.termscanguardian.ui.theme.TermScanGuardianTheme
 import okhttp3.Call
 import okhttp3.Callback
@@ -106,16 +103,14 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
     val showFab = remember { mutableStateOf(false) }
     val listOfImage = remember { mutableListOf<Uri?>() }
     val text = remember { mutableStateOf("") }
-    val textOpitmize = remember {
-        mutableStateOf("")
-    }
+    val textOptimize = remember { mutableStateOf("") }
+    val enabled = remember { mutableStateOf(true) }
+    val buttonText = remember { mutableStateOf("Scan") }
     val search = remember { mutableStateOf("") }
     val images = remember { mutableStateOf("") }
-    val scan = remember {
-        mutableStateOf("")
-    }
+    val scan = remember { mutableStateOf("") }
     val gson = Gson()
-    var opensheetData: Data by remember {
+    var openSheetData: Data by remember {
         mutableStateOf(Data(text = null, time = null, images = null))
     }
     val pickPDF = rememberLauncherForActivityResult(
@@ -160,7 +155,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             ConstraintLayout {
-                val (card, subcard) = createRefs()
+                val (card, subCard) = createRefs()
                 Box(modifier = Modifier
                     .fillMaxWidth()
                     .height(150.dp)
@@ -174,21 +169,14 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                             .fillMaxSize()
                             .padding(24.dp),
                         verticalAlignment = Alignment.Top,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.Start
                     ) {
                         Column {
                             Text(text = "Hello", color = MaterialTheme.colorScheme.background)
                             Text(
-                                text = "Mohamed Tahiri",
+                                text = getNameFromFile(context),
                                 style = MaterialTheme.typography.titleLarge,
                                 color = MaterialTheme.colorScheme.background
-                            )
-                        }
-                        IconButton(onClick = { /*TODO*/ }) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.settings),
-                                contentDescription = "",
-                                tint = MaterialTheme.colorScheme.background
                             )
                         }
                     }
@@ -198,7 +186,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                         .fillMaxWidth(.8f)
                         .height(100.dp)
                         .shadow(10.dp, shape = RoundedCornerShape(10.dp))
-                        .constrainAs(subcard) {
+                        .constrainAs(subCard) {
                             top.linkTo(card.bottom)
                             bottom.linkTo(card.bottom)
                             start.linkTo(parent.start)
@@ -326,7 +314,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                     .height(125.dp)
                                     .shadow(2.dp, shape = RoundedCornerShape(10.dp))
                                     .clickable {
-                                        opensheetData = Data(
+                                        openSheetData = Data(
                                             id = it.id,
                                             text = it.text,
                                             time = it.time,
@@ -446,7 +434,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                                 openDialog.value = false
                                                 openDialog.value = true
                                             }
-                                        }) {
+                                        }, enabled = enabled.value) {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.cross),
                                                 contentDescription = "",
@@ -460,6 +448,8 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                         }
                         Button(
                             onClick = {
+                                enabled.value = false
+                                buttonText.value = "Wait a few seconds..."
                                 for (uri in listOfImage) {
                                     val bitmap = MediaStore.Images.Media.getBitmap(
                                         context.contentResolver,
@@ -485,38 +475,44 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                 }
                                 for (i in text.value) {
                                     if (i.isLetter()) {
-                                        textOpitmize.value = textOpitmize.value + i
+                                        textOptimize.value = textOptimize.value + i
                                     } else {
-                                        textOpitmize.value = textOpitmize.value + " "
+                                        textOptimize.value = textOptimize.value + " "
                                     }
                                 }
-                                getResponse(textOpitmize.value) {
+                                getResponse(textOptimize.value) {
                                     scan.value = extractJsonFromString(it)
                                 }
-                                if (scan.value.isNotEmpty()){
-                                    val prefs =
-                                        context.getSharedPreferences(
-                                            "my_prefs",
-                                            Context.MODE_PRIVATE
+                                Handler().postDelayed({
+                                    if (scan.value.isNotEmpty()) {
+                                        val prefs =
+                                            context.getSharedPreferences(
+                                                "my_prefs",
+                                                Context.MODE_PRIVATE
+                                            )
+                                        val editor = prefs.edit()
+                                        editor.putString("text_key", scan.value)
+                                        editor.apply()
+                                        openDialog.value = false
+                                        navController.navigate(screen.VerifieScreen.name)
+                                        viewModel.addData(
+                                            Data(
+                                                text = scan.value,
+                                                time = System.currentTimeMillis(),
+                                                images = images.value
+                                            )
                                         )
-                                    val editor = prefs.edit()
-                                    editor.putString("text_key", scan.value)
-                                    editor.apply()
-                                    openDialog.value = false
-                                    navController.navigate(screen.VerifieScreen.name)
-                                    viewModel.addData(
-                                        Data(
-                                            text = scan.value,
-                                            time = System.currentTimeMillis(),
-                                            images = images.value
-                                        )
-                                    )
-                                }
-                            }, modifier = Modifier
+                                    }
+                                }, 15000)
+
+                            },
+                            modifier = Modifier
                                 .width(350.dp)
-                                .padding(4.dp, 0.dp), shape = RoundedCornerShape(10.dp)
+                                .padding(4.dp, 0.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            enabled = enabled.value
                         ) {
-                            Text(text = "scan")
+                            Text(text = buttonText.value)
                         }
                     }
                 }
@@ -533,14 +529,17 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                             .padding(10.dp, 0.dp)
                             .height(40.dp)
                             .clickable {
-                                viewModel.deleteData(opensheetData)
+                                viewModel.deleteData(openSheetData)
                                 openSheet.value = false
                             },
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Delete")
-                        Icon(painter = painterResource(id = R.drawable.trash), contentDescription = "")
+                        Icon(
+                            painter = painterResource(id = R.drawable.trash),
+                            contentDescription = ""
+                        )
                     }
                     Row(
                         modifier = Modifier
@@ -551,7 +550,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                 val prefs =
                                     context.getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
                                 val editor = prefs.edit()
-                                editor.putString("text_key", opensheetData.text)
+                                editor.putString("text_key", openSheetData.text)
                                 editor.apply()
                                 openSheet.value = false
                                 navController.navigate(screen.VerifieScreen.name)
@@ -560,7 +559,10 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("View")
-                        Icon(painter = painterResource(id = R.drawable.overview), contentDescription = "")
+                        Icon(
+                            painter = painterResource(id = R.drawable.overview),
+                            contentDescription = ""
+                        )
                     }
                     Row(
                         modifier = Modifier
@@ -572,8 +574,10 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Share")
-                        Icon(painter = painterResource(id = R.drawable.share), contentDescription = "")
-
+                        Icon(
+                            painter = painterResource(id = R.drawable.share),
+                            contentDescription = ""
+                        )
                     }
                     Spacer(modifier = Modifier.height(40.dp))
                 }
