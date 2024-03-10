@@ -41,6 +41,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     )
+
     @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,7 +68,7 @@ fun Main(viewModel: DataModelViewModel) {
             SplashScreen(navController)
         }
         composable(screen.HomeScreen.name) {
-            HomeScreen(navController,viewModel)
+            HomeScreen(navController, viewModel)
         }
         composable(screen.VerifieScreen.name) {
             VerifieScreen(navController)

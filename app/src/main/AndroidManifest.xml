@@ -29,7 +29,7 @@
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/path_provider"/>
         </provider>
         <activity android:name="com.canhub.cropper.CropImageActivity"
-            android:theme="@style/Base.Theme.AppCompat"/>
+            android:theme="@style/CustomCropImageActivityTheme"/>
     </application>
 
 </manifest>

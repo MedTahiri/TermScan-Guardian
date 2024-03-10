@@ -2,14 +2,11 @@ package com.mohamed.tahiri.termscanguardian.ui.screens.homescreen
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.graphics.ImageDecoder
-import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,11 +26,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,6 +42,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -55,12 +53,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
@@ -76,19 +75,11 @@ import com.mohamed.tahiri.termscanguardian.data.Resulta
 import com.mohamed.tahiri.termscanguardian.database.Data
 import com.mohamed.tahiri.termscanguardian.database.DataModelViewModel
 import com.mohamed.tahiri.termscanguardian.screen
+import com.mohamed.tahiri.termscanguardian.ui.convertPdfToImageURIs
+import com.mohamed.tahiri.termscanguardian.ui.extractJsonFromString
 import com.mohamed.tahiri.termscanguardian.ui.getNameFromFile
+import com.mohamed.tahiri.termscanguardian.ui.getResponse
 import com.mohamed.tahiri.termscanguardian.ui.theme.TermScanGuardianTheme
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import org.json.JSONObject
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -169,21 +160,25 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                             .fillMaxSize()
                             .padding(24.dp),
                         verticalAlignment = Alignment.Top,
-                        horizontalArrangement = Arrangement.Start
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text(text = "Hello", color = MaterialTheme.colorScheme.background)
+                            Text(
+                                text = "Hello",
+                                fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5),
+                                color = Color.White
+                            )
                             Text(
                                 text = getNameFromFile(context),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.background
+                                fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                                color = Color.White
                             )
                         }
                     }
                 }
                 Card(
                     modifier = Modifier
-                        .fillMaxWidth(.8f)
+                        .fillMaxWidth(.9f)
                         .height(100.dp)
                         .shadow(10.dp, shape = RoundedCornerShape(10.dp))
                         .constrainAs(subCard) {
@@ -228,7 +223,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                 )
                                 Text(
                                     text = "Take Photo",
-                                    style = MaterialTheme.typography.bodySmall
+                                    fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.6)
                                 )
                             }
                         }
@@ -253,7 +248,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                 )
                                 Text(
                                     text = "Pick Image",
-                                    style = MaterialTheme.typography.bodySmall
+                                    fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.6)
                                 )
                             }
                         }
@@ -272,16 +267,19 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                     painter = painterResource(id = R.drawable.document),
                                     contentDescription = ""
                                 )
-                                Text(text = "Pick PDF", style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    text = "Pick PDF",
+                                    fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.6)
+                                )
                             }
                         }
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(start = 24.dp, top = 24.dp, end = 24.dp, bottom = 0.dp),
+                    .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 OutlinedTextField(
@@ -294,25 +292,41 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                         )
                     },
                     placeholder = {
-                        Text(text = "Searching for...")
+                        Text(
+                            text = "Searching for...",
+                            fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5)
+                        )
                     },
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth(.9f)
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 val dataList = if (search.value == "") viewModel.getData()
                     .collectAsState(initial = emptyList()) else viewModel.searchData(search.value)
                     .collectAsState(initial = emptyList())
                 if (dataList.value.isEmpty()) {
-                    Text(text = "Nothing")
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.empty),
+                            contentDescription = "",
+                            modifier = Modifier.fillMaxSize(.7f)
+                        )
+                    }
+
                 } else {
-                    LazyColumn(content = {
+                    LazyColumn(modifier = Modifier.fillMaxWidth(.9f)) {
                         items(dataList.value) {
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(125.dp)
-                                    .shadow(2.dp, shape = RoundedCornerShape(10.dp))
+                                    .height(150.dp)
+                                    .padding(0.dp, 4.dp)
+                                    .shadow(5.dp, shape = RoundedCornerShape(10.dp))
                                     .clickable {
                                         openSheetData = Data(
                                             id = it.id,
@@ -321,7 +335,9 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                             images = it.images
                                         )
                                         openSheet.value = true
-                                    }
+                                    }, colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.background
+                                )
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -330,7 +346,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                 ) {
                                     LazyRow(
                                         modifier = Modifier
-                                            .size(115.dp)
+                                            .size(125.dp)
                                             .padding(5.dp)
                                     ) {
                                         items(it.images!!.split("*_*")) {
@@ -360,18 +376,21 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                         val date = Date(it.time!!.toLong())
                                         val formattedDateTime = sdf.format(date)
                                         Text(
-                                            text = "${
-                                                gson.fromJson(
-                                                    it.text,
-                                                    Resulta::class.java
-                                                ).summary
-                                            }",
-                                            maxLines = 3,
-                                            style = MaterialTheme.typography.bodyMedium
+                                            text =
+                                            gson.fromJson(
+                                                it.text,
+                                                Resulta::class.java
+                                            ).summary,
+                                            maxLines = 4,
+                                            fontSize = MaterialTheme.typography.titleLarge.fontSize.div(
+                                                1.5
+                                            )
                                         )
                                         Text(
                                             text = formattedDateTime,
-                                            style = MaterialTheme.typography.bodySmall
+                                            fontSize = MaterialTheme.typography.titleLarge.fontSize.div(
+                                                1.5
+                                            )
                                         )
                                     }
                                 }
@@ -379,7 +398,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                             }
                             Spacer(modifier = Modifier.height(10.dp))
                         }
-                    })
+                    }
                 }
 
             }
@@ -390,7 +409,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.play),
-                        tint = MaterialTheme.colorScheme.background,
+                        tint = Color.White,
                         contentDescription = ""
                     )
                 },
@@ -403,125 +422,11 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
     }
 
     when {
-        openDialog.value -> {
-            Dialog(onDismissRequest = { openDialog.value = false }) {
-                Card {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        LazyRow(modifier = Modifier.weight(1f, false)) {
-                            items(listOfImage) {
-                                val source =
-                                    ImageDecoder.createSource(context.contentResolver, it!!)
-                                val bitmap = ImageDecoder.decodeBitmap(source)
-                                Card(
-                                    modifier = Modifier
-                                        .padding(4.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.TopEnd) {
-                                        Image(
-                                            bitmap = bitmap.asImageBitmap(),
-                                            contentDescription = "",
-                                            modifier = Modifier.size(300.dp)
-                                        )
-                                        IconButton(onClick = {
-                                            listOfImage.remove(it)
-                                            if (listOfImage.isEmpty()) {
-                                                showFab.value = false
-                                                openDialog.value = false
-                                            } else {
-                                                openDialog.value = false
-                                                openDialog.value = true
-                                            }
-                                        }, enabled = enabled.value) {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.cross),
-                                                contentDescription = "",
-                                                modifier = Modifier.padding(5.dp),
-                                                tint = MaterialTheme.colorScheme.error
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        Button(
-                            onClick = {
-                                enabled.value = false
-                                buttonText.value = "Wait a few seconds..."
-                                for (uri in listOfImage) {
-                                    val bitmap = MediaStore.Images.Media.getBitmap(
-                                        context.contentResolver,
-                                        uri
-                                    )
-                                    val recognizer = TextRecognizer.Builder(context).build()
-                                    if (!recognizer.isOperational) {
-                                        Toast.makeText(context, "Error", Toast.LENGTH_LONG).show()
-                                    } else {
-                                        val frame = Frame.Builder().setBitmap(bitmap).build()
-                                        val textBlockSparseArray = recognizer.detect(frame)
-                                        val stringBuilder = StringBuilder()
-                                        for (block in 0 until textBlockSparseArray.size()) {
-                                            val textBlock = textBlockSparseArray.valueAt(block)
-                                            stringBuilder.append(textBlock.value)
-                                            stringBuilder.append(" ")
-                                        }
-                                        text.value = text.value + stringBuilder.toString()
-                                            .replace("\n", " ") + "\n"
-                                        images.value = images.value + uri.toString() + "*_*"
-                                        text.value = text.value.replace("\n", "")
-                                    }
-                                }
-                                for (i in text.value) {
-                                    if (i.isLetter()) {
-                                        textOptimize.value = textOptimize.value + i
-                                    } else {
-                                        textOptimize.value = textOptimize.value + " "
-                                    }
-                                }
-                                getResponse(textOptimize.value) {
-                                    scan.value = extractJsonFromString(it)
-                                }
-                                Handler().postDelayed({
-                                    if (scan.value.isNotEmpty()) {
-                                        val prefs =
-                                            context.getSharedPreferences(
-                                                "my_prefs",
-                                                Context.MODE_PRIVATE
-                                            )
-                                        val editor = prefs.edit()
-                                        editor.putString("text_key", scan.value)
-                                        editor.apply()
-                                        openDialog.value = false
-                                        navController.navigate(screen.VerifieScreen.name)
-                                        viewModel.addData(
-                                            Data(
-                                                text = scan.value,
-                                                time = System.currentTimeMillis(),
-                                                images = images.value
-                                            )
-                                        )
-                                    }
-                                }, 15000)
-
-                            },
-                            modifier = Modifier
-                                .width(350.dp)
-                                .padding(4.dp, 0.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            enabled = enabled.value
-                        ) {
-                            Text(text = buttonText.value)
-                        }
-                    }
-                }
-            }
-        }
-    }
-    when {
         openSheet.value -> {
-            ModalBottomSheet(onDismissRequest = { openSheet.value = false }) {
+            ModalBottomSheet(
+                onDismissRequest = { openSheet.value = false },
+                sheetState = rememberModalBottomSheetState()
+            ) {
                 Column {
                     Row(
                         modifier = Modifier
@@ -535,7 +440,10 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Delete")
+                        Text(
+                            "Delete",
+                            fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5)
+                        )
                         Icon(
                             painter = painterResource(id = R.drawable.trash),
                             contentDescription = ""
@@ -558,24 +466,12 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("View")
+                        Text(
+                            "View",
+                            fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5)
+                        )
                         Icon(
                             painter = painterResource(id = R.drawable.overview),
-                            contentDescription = ""
-                        )
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp)
-                            .padding(10.dp, 0.dp)
-                            .clickable { openSheet.value = false },
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Share")
-                        Icon(
-                            painter = painterResource(id = R.drawable.share),
                             contentDescription = ""
                         )
                     }
@@ -584,107 +480,145 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
             }
         }
     }
-}
-
-fun convertPdfToImageURIs(context: Context, inputPdfUri: Uri): List<Uri> {
-    val imageURIs = mutableListOf<Uri>()
-    val outputDir = context.cacheDir
-    val pdfRenderer = PdfRenderer(context.contentResolver.openFileDescriptor(inputPdfUri, "r")!!)
-    for (pageIndex in 0 until pdfRenderer.pageCount) {
-        val page = pdfRenderer.openPage(pageIndex)
-        val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
-        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-        val outputFile = File(outputDir, "page${System.currentTimeMillis()}$pageIndex.jpg")
-        saveBitmapToFile(bitmap, outputFile)
-        imageURIs.add(outputFile.toUri())
-        page.close()
-    }
-    pdfRenderer.close()
-    return imageURIs
-}
-
-fun saveBitmapToFile(bitmap: Bitmap, outputFile: File) {
-    FileOutputStream(outputFile).use { out ->
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
-    }
-}
 
 
-fun getResponse(question: String, callback: (String) -> Unit) {
+    when {
+        openDialog.value -> {
+            AlertDialog(
+                onDismissRequest = {
+                    openDialog.value = false
+                },
+                title = {
+                    Text(
+                        text = "Choose an image",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5)
+                    )
+                },
+                text = {
+                    LazyRow {
+                        items(listOfImage) {
+                            val source =
+                                ImageDecoder.createSource(context.contentResolver, it!!)
+                            val bitmap = ImageDecoder.decodeBitmap(source)
 
-    val apiKey = "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"
-    val url = "https://api.openai.com/v1/chat/completions"
-    val prompt =
-        "Please analyze and provide a sample summary for the following terms and conditions: $question Then, identify the sections with severity ratings and present the findings in the following format : json ( summary , sections( id(start from 0) ,title ,content,risk(low or middle or high)))"
-    val requestBody = """
-            {
-                "model": "gpt-3.5-turbo",
-                "messages": [
-                  {
-                    "role": "user",
-                    "content": "$prompt"
-                  }
-                ],
-                "temperature": 1,
-                "max_tokens": 500,
-                "top_p": 1,
-                "frequency_penalty": 0,
-                "presence_penalty": 0
-            }
-        """.trimIndent()
+                            Box(
+                                contentAlignment = Alignment.TopEnd,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Image(
+                                    bitmap = bitmap.asImageBitmap(),
+                                    contentDescription = "",
+                                    modifier = Modifier
+                                        .size(250.dp)
+                                        .padding(16.dp)
+                                )
+                                IconButton(onClick = {
+                                    listOfImage.remove(it)
+                                    if (listOfImage.isEmpty()) {
+                                        showFab.value = false
+                                        openDialog.value = false
+                                    } else {
+                                        openDialog.value = false
+                                        openDialog.value = true
+                                    }
+                                }, enabled = enabled.value) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.cross),
+                                        contentDescription = "",
+                                        modifier = Modifier.padding(5.dp),
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            enabled.value = false
+                            buttonText.value = "Wait a few seconds..."
+                            for (uri in listOfImage) {
+                                val bitmap = MediaStore.Images.Media.getBitmap(
+                                    context.contentResolver,
+                                    uri
+                                )
+                                val recognizer = TextRecognizer.Builder(context).build()
+                                if (!recognizer.isOperational) {
+                                    Toast.makeText(context, "Error", Toast.LENGTH_LONG).show()
+                                } else {
+                                    val frame = Frame.Builder().setBitmap(bitmap).build()
+                                    val textBlockSparseArray = recognizer.detect(frame)
+                                    val stringBuilder = StringBuilder()
+                                    for (block in 0 until textBlockSparseArray.size()) {
+                                        val textBlock = textBlockSparseArray.valueAt(block)
+                                        stringBuilder.append(textBlock.value)
+                                        stringBuilder.append(" ")
+                                    }
+                                    text.value = text.value + stringBuilder.toString()
+                                        .replace("\n", " ") + "\n"
+                                    images.value = images.value + uri.toString() + "*_*"
+                                    text.value = text.value.replace("\n", "")
+                                }
+                            }
+                            for (i in text.value) {
+                                if (i.isLetter()) {
+                                    textOptimize.value = textOptimize.value + i
+                                } else {
+                                    textOptimize.value = textOptimize.value + " "
+                                }
+                            }
+                            getResponse(textOptimize.value) {
+                                scan.value = extractJsonFromString(it)
+                            }
+                            Handler().postDelayed({
+                                if (scan.value.isNotEmpty()) {
+                                    val prefs =
+                                        context.getSharedPreferences(
+                                            "my_prefs",
+                                            Context.MODE_PRIVATE
+                                        )
+                                    val editor = prefs.edit()
+                                    editor.putString("text_key", scan.value)
+                                    editor.apply()
+                                    openDialog.value = false
+                                    navController.navigate(screen.VerifieScreen.name)
+                                    viewModel.addData(
+                                        Data(
+                                            text = scan.value,
+                                            time = System.currentTimeMillis(),
+                                            images = images.value
+                                        )
+                                    )
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "there is problem in internet",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }, 30000)
 
-    val request = Request.Builder()
-        .url(url)
-        .addHeader("Content-Type", "application/json")
-        .addHeader("Authorization", "Bearer $apiKey")
-        .post(requestBody.toRequestBody("application/json".toMediaTypeOrNull()))
-        .build()
-
-    OkHttpClient().newCall(request).enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {
-            Log.e("error", "API failed", e)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        enabled = enabled.value
+                    ) {
+                        Text(
+                            text = buttonText.value,
+                            color = Color.White,
+                            fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5)
+                        )
+                    }
+                }
+            )
         }
-
-        override fun onResponse(call: Call, response: Response) {
-            val body = response.body?.string()
-            if (body != null) {
-                Log.v("data", body)
-            } else {
-                Log.v("data", "empty")
-            }
-            val jsonObject = body?.let { JSONObject(it) }
-            val choicesArray = jsonObject!!.getJSONArray("choices")
-            if (choicesArray.length() > 0) {
-                val choiceObject = choicesArray.getJSONObject(0)
-                val messageObject = choiceObject.getJSONObject("message")
-                val content = messageObject.getString("content")
-                callback(content.toString())
-            } else {
-                println("No choices found")
-            }
-        }
     }
-    )
 }
 
-
-fun extractJsonFromString(content: String): String {
-    var firstIndex = 0
-    var lastIndex = 0
-    for (i in 0..content.length) {
-        if (content[i] == '{') {
-            firstIndex = i
-            break
-        }
-    }
-    for (j in content.length - 1 downTo 0) {
-        if (content[j] == '}') {
-            lastIndex = j + 1
-            break
-        }
-    }
-    return content.substring(firstIndex, lastIndex)
-}
 
 @RequiresApi(Build.VERSION_CODES.P)
 @Preview(showSystemUi = true)

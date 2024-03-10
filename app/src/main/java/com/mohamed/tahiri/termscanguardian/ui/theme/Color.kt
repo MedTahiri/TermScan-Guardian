@@ -11,9 +11,9 @@ val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
 
 
-val PrimaryColor = Color(0xFF00796B) // Example primary color: teal
+val PrimaryColor = Color(0xFF407BFF) // Example primary color: teal
 // Secondary color
-val SecondaryColor = Color(0xFF3F51B5) // Example secondary color: indigo
+val SecondaryColor = Color(0xFF407BFF) // Example secondary color: indigo
 
 // Tertiary color
-val TertiaryColor = Color(0xFF4CAF50) // Example tertiary color: green
+val TertiaryColor = Color(0xFF407BFF) // Example tertiary color: green

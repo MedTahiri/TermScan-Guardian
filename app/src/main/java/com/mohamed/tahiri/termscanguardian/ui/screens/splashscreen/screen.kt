@@ -1,6 +1,5 @@
 package com.mohamed.tahiri.termscanguardian.ui.screens.splashscreen
 
-import android.content.Context
 import android.os.Handler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -22,11 +21,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,10 +37,6 @@ import com.mohamed.tahiri.termscanguardian.screen
 import com.mohamed.tahiri.termscanguardian.ui.getNameFromFile
 import com.mohamed.tahiri.termscanguardian.ui.saveNameToFile
 import com.mohamed.tahiri.termscanguardian.ui.theme.TermScanGuardianTheme
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.InputStreamReader
 
 @Composable
 fun SplashScreen(navController: NavHostController) {
@@ -53,15 +50,15 @@ fun SplashScreen(navController: NavHostController) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(buildAnnotatedString {
-            withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.background)) {
+            withStyle(style = SpanStyle(color = Color.White)) {
                 append("TermScan")
             }
             append("\n")
             append("\n")
-            withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.background)) {
+            withStyle(style = SpanStyle(color = Color.White)) {
                 append(" Guardian")
             }
-        }, fontSize = 40.sp, fontWeight = FontWeight.ExtraBold)
+        }, fontSize = MaterialTheme.typography.titleLarge.fontSize.times(2))
     }
     if (getNameFromFile(context) == "") {
         showDialog.value = true
@@ -71,7 +68,7 @@ fun SplashScreen(navController: NavHostController) {
         }, 3000)
     }
     if (showDialog.value) {
-        GetNameDialog{ fullName ->
+        GetNameDialog { fullName ->
             saveNameToFile(context, fullName)
             showDialog.value = false
             navController.navigate(screen.HomeScreen.name)
@@ -84,7 +81,7 @@ fun GetNameDialog(onNameEntered: (String) -> Unit) {
     var name by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = { },
-        title = { Text(text = "Enter Full Name") },
+        title = { Text(text = "Enter Full Name", fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
         text = {
             OutlinedTextField(
                 value = name,
@@ -94,7 +91,10 @@ fun GetNameDialog(onNameEntered: (String) -> Unit) {
                 keyboardActions = KeyboardActions(onDone = {
                     onNameEntered(name)
                 }),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = {
+                    Text(text = "Full Name", fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5))
+                }
             )
         },
         confirmButton = {
@@ -105,7 +105,7 @@ fun GetNameDialog(onNameEntered: (String) -> Unit) {
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Save")
+                Text(text = "Save",fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5),color = Color.White)
             }
         }
     )
