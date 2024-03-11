@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -23,16 +25,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.mohamed.tahiri.termscanguardian.R
 import com.mohamed.tahiri.termscanguardian.screen
 import com.mohamed.tahiri.termscanguardian.ui.getNameFromFile
 import com.mohamed.tahiri.termscanguardian.ui.saveNameToFile
@@ -49,6 +52,14 @@ fun SplashScreen(navController: NavHostController) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+
+        Icon(
+            painter = painterResource(id = R.drawable.logo_foreground),
+            contentDescription = "",
+            tint = Color.White,
+            modifier = Modifier.size(200.dp)
+        )
+
         Text(buildAnnotatedString {
             withStyle(style = SpanStyle(color = Color.White)) {
                 append("TermScan")
@@ -81,7 +92,14 @@ fun GetNameDialog(onNameEntered: (String) -> Unit) {
     var name by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = { },
-        title = { Text(text = "Enter Full Name", fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+        title = {
+            Text(
+                text = "Enter Full Name",
+                fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        },
         text = {
             OutlinedTextField(
                 value = name,
@@ -93,7 +111,10 @@ fun GetNameDialog(onNameEntered: (String) -> Unit) {
                 }),
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = {
-                    Text(text = "Full Name", fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5))
+                    Text(
+                        text = "Full Name",
+                        fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5)
+                    )
                 }
             )
         },
@@ -105,7 +126,11 @@ fun GetNameDialog(onNameEntered: (String) -> Unit) {
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Save",fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5),color = Color.White)
+                Text(
+                    text = "Save",
+                    fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5),
+                    color = Color.White
+                )
             }
         }
     )
@@ -115,6 +140,6 @@ fun GetNameDialog(onNameEntered: (String) -> Unit) {
 @Composable
 fun GreetingPreview() {
     TermScanGuardianTheme {
-
+        SplashScreen(navController = rememberNavController())
     }
 }

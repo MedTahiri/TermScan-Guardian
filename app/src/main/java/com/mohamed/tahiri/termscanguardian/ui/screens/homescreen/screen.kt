@@ -314,7 +314,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                         Image(
                             painter = painterResource(id = R.drawable.empty),
                             contentDescription = "",
-                            modifier = Modifier.fillMaxSize(.7f)
+                            modifier = Modifier.fillMaxWidth(.5f)
                         )
                     }
 
