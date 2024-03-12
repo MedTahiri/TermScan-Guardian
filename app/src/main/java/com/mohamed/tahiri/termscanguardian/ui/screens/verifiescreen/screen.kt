@@ -94,25 +94,17 @@ fun VerifieScreen(navController: NavHostController) {
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(text = it.title.toLowerCase(),fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5))
-                                if (it.risk == "low") {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.bulb),
-                                        contentDescription = "",
-                                        tint = Color.Green
-                                    )
-                                } else if (it.risk == "middle") {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.bulb),
-                                        contentDescription = "",
-                                        tint = Color.Yellow
-                                    )
-                                } else if (it.risk == "high") {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.bulb),
-                                        contentDescription = "",
-                                        tint = Color.Red
-                                    )
+                                val iconTint = when (it.risk) {
+                                    "low" -> Color.Green
+                                    "middle" -> Color.Yellow
+                                    "high" -> Color.Red
+                                    else -> Color.Black
                                 }
+                                Icon(
+                                    painter = painterResource(id = R.drawable.bulb),
+                                    contentDescription = "",
+                                    tint = iconTint
+                                )
                             }
                         }
                         Text(modifier = Modifier.padding(10.dp), text = it.content.toLowerCase(),fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5))

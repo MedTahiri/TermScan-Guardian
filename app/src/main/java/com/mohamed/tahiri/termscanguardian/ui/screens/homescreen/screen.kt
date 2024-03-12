@@ -14,6 +14,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,6 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -294,11 +296,20 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                     placeholder = {
                         Text(
                             text = "Searching for...",
-                            fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5)
+                            fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5),
+                            color = Color.Gray
                         )
                     },
+                    textStyle = TextStyle(
+                        color = Color.Black,
+                        fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5)
+                    ),
                     shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth(.9f)
+                    modifier = Modifier.fillMaxWidth(.9f).border( // Add border
+                        width = 1.dp,
+                        color = Color.LightGray,
+                        shape = RoundedCornerShape(10.dp)
+                    ),
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 

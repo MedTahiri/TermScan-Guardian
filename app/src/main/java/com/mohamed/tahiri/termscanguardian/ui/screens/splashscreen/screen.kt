@@ -26,11 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -52,25 +49,14 @@ fun SplashScreen(navController: NavHostController) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
         Icon(
             painter = painterResource(id = R.drawable.logo_foreground),
             contentDescription = "",
             tint = Color.White,
-            modifier = Modifier.size(200.dp)
+            modifier = Modifier.size(300.dp)
         )
-
-        Text(buildAnnotatedString {
-            withStyle(style = SpanStyle(color = Color.White)) {
-                append("TermScan")
-            }
-            append("\n")
-            append("\n")
-            withStyle(style = SpanStyle(color = Color.White)) {
-                append(" Guardian")
-            }
-        }, fontSize = MaterialTheme.typography.titleLarge.fontSize.times(2))
     }
+
     if (getNameFromFile(context) == "") {
         showDialog.value = true
     } else {
