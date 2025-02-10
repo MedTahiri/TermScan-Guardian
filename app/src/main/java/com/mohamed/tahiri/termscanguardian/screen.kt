@@ -4,5 +4,4 @@ enum class screen {
     SplashScreen,
     HomeScreen,
     VerifieScreen,
-    test
 }

@@ -17,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
+import androidx.viewbinding.BuildConfig
 import com.mohamed.tahiri.termscanguardian.database.AppDatabase
 import com.mohamed.tahiri.termscanguardian.database.DataModelViewModel
 import com.mohamed.tahiri.termscanguardian.ui.screens.homescreen.HomeScreen
@@ -53,6 +54,9 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Main(viewModel)
                 }
+
+                //print("API_KEY : " + BuildConfig.API_KEY)
+
             }
         }
 

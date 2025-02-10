@@ -62,8 +62,7 @@ fun extractJsonFromString(content: String): String {
 
 
 fun getResponse(question: String, callback: (String) -> Unit) {
-
-    val apiKey = "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"
+    val apiKey = ""
     val url = "https://api.openai.com/v1/chat/completions"
     val prompt =
         "Please analyze and provide a sample summary for the following terms and conditions: $question Then, identify the sections with severity ratings and present the findings in the following format : json ( summary , sections( id(start from 0) ,title ,content,risk(low or middle or high)))"
