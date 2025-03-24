@@ -17,7 +17,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
-import androidx.viewbinding.BuildConfig
 import com.mohamed.tahiri.termscanguardian.database.AppDatabase
 import com.mohamed.tahiri.termscanguardian.database.DataModelViewModel
 import com.mohamed.tahiri.termscanguardian.ui.screens.homescreen.HomeScreen
@@ -54,9 +53,6 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Main(viewModel)
                 }
-
-                //print("API_KEY : " + BuildConfig.API_KEY)
-
             }
         }
 
@@ -74,7 +70,9 @@ fun Main(viewModel: DataModelViewModel) {
         composable(screen.HomeScreen.name) {
             HomeScreen(navController, viewModel)
         }
-        composable(screen.VerifieScreen.name) {
+        composable(
+            screen.VerifieScreen.name
+        ) {
             VerifieScreen(navController)
         }
     }

@@ -20,15 +20,15 @@ class DataModelViewModel(private val dao: DataDao) : ViewModel() {
         }
     }
 
-    fun deleteData(data: Data){
+    fun deleteData(data: Data) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO){
+            withContext(Dispatchers.IO) {
                 dao.deleteData(data)
             }
         }
     }
 
-    fun searchData(search:String): Flow<List<Data>>{
+    fun searchData(search: String): Flow<List<Data>> {
         return dao.searchData(search)
     }
 }

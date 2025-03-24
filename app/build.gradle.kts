@@ -1,3 +1,4 @@
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -7,11 +8,19 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+val properties = Properties().apply {
+    load(project.rootProject.file("local.properties").inputStream())
+}
+
 android {
     namespace = "com.mohamed.tahiri.termscanguardian"
     compileSdk = 35
 
     defaultConfig {
+        buildFeatures {
+            buildConfig = true
+        }
+
         applicationId = "com.mohamed.tahiri.termscanguardian"
         minSdk = 24
 
@@ -23,6 +32,8 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField("String", "API_KEY", "\"${properties.getProperty("API_KEY")}\"")
     }
 
     buildTypes {
@@ -68,17 +79,18 @@ dependencies {
     implementation("com.vanniktech:android-image-cropper:4.5.0")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.0")
     testImplementation("junit:junit:4.13.2")
-    //androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    //androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    //androidTestImplementation(platform("androidx.compose:compose-bom:2025.01.01"))
-    //androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2025.01.01"))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("com.google.android.gms:play-services-vision:20.1.3")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
     implementation("com.google.code.gson:gson:2.11.0")
-    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 }
 

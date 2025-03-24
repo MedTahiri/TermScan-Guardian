@@ -16,6 +16,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,10 +32,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -43,10 +47,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,9 +66,11 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
@@ -79,8 +88,7 @@ import com.mohamed.tahiri.termscanguardian.database.DataModelViewModel
 import com.mohamed.tahiri.termscanguardian.screen
 import com.mohamed.tahiri.termscanguardian.ui.convertPdfToImageURIs
 import com.mohamed.tahiri.termscanguardian.ui.extractJsonFromString
-import com.mohamed.tahiri.termscanguardian.ui.getNameFromFile
-import com.mohamed.tahiri.termscanguardian.ui.getResponse
+import com.mohamed.tahiri.termscanguardian.ui.fetchResponse
 import com.mohamed.tahiri.termscanguardian.ui.theme.TermScanGuardianTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -94,7 +102,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
     val openDialog = remember { mutableStateOf(false) }
     val openSheet = remember { mutableStateOf(false) }
     val showFab = remember { mutableStateOf(false) }
-    val listOfImage = remember { mutableListOf<Uri?>() }
+    val listOfImage = remember { mutableStateListOf<Uri?>() }
     val text = remember { mutableStateOf("") }
     val textOptimize = remember { mutableStateOf("") }
     val enabled = remember { mutableStateOf(true) }
@@ -106,6 +114,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
     var openSheetData: Data by remember {
         mutableStateOf(Data(text = null, time = null, images = null))
     }
+    val isSearch = remember { mutableStateOf(false) }
     val pickPDF = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) {
@@ -151,132 +160,154 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                 val (card, subCard) = createRefs()
                 Box(modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp)
+                    .height(if (!isSearch.value) 150.dp else 70.dp)
                     .constrainAs(card) {
                         top.linkTo(parent.top)
                     }
-                    .clip(shape = RoundedCornerShape(0.dp, 0.dp, 20.dp, 20.dp))
+                    .clip(
+                        shape = RoundedCornerShape(
+                            0.dp,
+                            0.dp,
+                            if (!isSearch.value) 20.dp else 0.dp,
+                            if (!isSearch.value) 20.dp else 0.dp
+                        )
+                    )
                     .background(color = MaterialTheme.colorScheme.primary)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                        verticalAlignment = Alignment.Top,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
+
+                    TopAppBar(
+                        title = {
                             Text(
-                                text = "Hello",
-                                fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5),
-                                color = Color.White
+                                text = "TermScan Guardian",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                style = MaterialTheme.typography.titleLarge
                             )
-                            Text(
-                                text = getNameFromFile(context),
-                                fontSize = MaterialTheme.typography.titleLarge.fontSize,
-                                color = Color.White
-                            )
-                        }
-                    }
+                        },
+                        actions = {
+                            IconButton(onClick = {
+                                isSearch.value = !isSearch.value
+                            }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.search),
+                                    contentDescription = "search",
+                                    tint = MaterialTheme.colorScheme.background
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                    )
+
                 }
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth(.9f)
-                        .height(100.dp)
-                        .shadow(10.dp, shape = RoundedCornerShape(10.dp))
-                        .constrainAs(subCard) {
-                            top.linkTo(card.bottom)
-                            bottom.linkTo(card.bottom)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                        }, colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
-                ) {
-                    Row(
+                if (!isSearch.value) {
+                    Card(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceAround
+                            .fillMaxWidth(.9f)
+                            .height(100.dp)
+                            .shadow(10.dp, shape = RoundedCornerShape(10.dp))
+                            .constrainAs(subCard) {
+                                top.linkTo(card.bottom)
+                                bottom.linkTo(card.bottom)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                            },
+                        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.background)
                     ) {
-                        Card(modifier = Modifier
-                            .size(80.dp)
-                            .clickable {
-                                val cropOptions = CropImageContractOptions(
-                                    null,
-                                    CropImageOptions(imageSourceIncludeGallery = false)
-                                )
-                                val permissionCheckResult = ContextCompat.checkSelfPermission(
-                                    context, android.Manifest.permission.CAMERA
-                                )
-                                if (permissionCheckResult == PackageManager.PERMISSION_GRANTED) {
-                                    imageCropLauncher.launch(cropOptions)
-                                } else {
-                                    permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            Card(modifier = Modifier
+                                .size(80.dp)
+                                .clickable {
+                                    val cropOptions = CropImageContractOptions(
+                                        null,
+                                        CropImageOptions(imageSourceIncludeGallery = false)
+                                    )
+                                    val permissionCheckResult = ContextCompat.checkSelfPermission(
+                                        context, android.Manifest.permission.CAMERA
+                                    )
+                                    if (permissionCheckResult == PackageManager.PERMISSION_GRANTED) {
+                                        imageCropLauncher.launch(cropOptions)
+                                    } else {
+                                        permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                                    }
+                                }
+                                .shadow(2.dp, shape = RoundedCornerShape(10.dp))) {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.SpaceAround,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.camera),
+                                        contentDescription = ""
+                                    )
+                                    Text(
+                                        text = "Take Photo",
+                                        fontSize = MaterialTheme.typography.titleLarge.fontSize.div(
+                                            1.6
+                                        )
+                                    )
                                 }
                             }
-                            .shadow(2.dp, shape = RoundedCornerShape(10.dp))) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.SpaceAround,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.camera),
-                                    contentDescription = ""
-                                )
-                                Text(
-                                    text = "Take Photo",
-                                    fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.6)
-                                )
+                            Card(modifier = Modifier
+                                .size(80.dp)
+                                .clickable {
+                                    val cropOptions = CropImageContractOptions(
+                                        null,
+                                        CropImageOptions(imageSourceIncludeCamera = false)
+                                    )
+                                    imageCropLauncher.launch(cropOptions)
+                                }
+                                .shadow(2.dp, shape = RoundedCornerShape(10.dp))) {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.SpaceAround,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.picture),
+                                        contentDescription = ""
+                                    )
+                                    Text(
+                                        text = "Pick Image",
+                                        fontSize = MaterialTheme.typography.titleLarge.fontSize.div(
+                                            1.6
+                                        )
+                                    )
+                                }
                             }
-                        }
-                        Card(modifier = Modifier
-                            .size(80.dp)
-                            .clickable {
-                                val cropOptions = CropImageContractOptions(
-                                    null,
-                                    CropImageOptions(imageSourceIncludeCamera = false)
-                                )
-                                imageCropLauncher.launch(cropOptions)
-                            }
-                            .shadow(2.dp, shape = RoundedCornerShape(10.dp))) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.SpaceAround,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.picture),
-                                    contentDescription = ""
-                                )
-                                Text(
-                                    text = "Pick Image",
-                                    fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.6)
-                                )
-                            }
-                        }
-                        Card(modifier = Modifier
-                            .size(80.dp)
-                            .clickable {
-                                pickPDF.launch("application/pdf")
-                            }
-                            .shadow(2.dp, shape = RoundedCornerShape(10.dp))) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.SpaceAround,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.document),
-                                    contentDescription = ""
-                                )
-                                Text(
-                                    text = "Pick PDF",
-                                    fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.6)
-                                )
+                            Card(modifier = Modifier
+                                .size(80.dp)
+                                .clickable {
+                                    pickPDF.launch("application/pdf")
+                                }
+                                .shadow(2.dp, shape = RoundedCornerShape(10.dp))) {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.SpaceAround,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.document),
+                                        contentDescription = ""
+                                    )
+                                    Text(
+                                        text = "Pick PDF",
+                                        fontSize = MaterialTheme.typography.titleLarge.fontSize.div(
+                                            1.6
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
                 }
+
             }
             Spacer(modifier = Modifier.height(16.dp))
             Column(
@@ -284,34 +315,34 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                OutlinedTextField(
-                    value = search.value,
-                    onValueChange = { search.value = it },
-                    trailingIcon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.search),
-                            contentDescription = ""
-                        )
-                    },
-                    placeholder = {
-                        Text(
-                            text = "Searching for...",
-                            fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5),
-                            color = Color.Gray
-                        )
-                    },
-                    textStyle = TextStyle(
-                        color = Color.Black,
-                        fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5)
-                    ),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth(.9f).border( // Add border
-                        width = 1.dp,
-                        color = Color.LightGray,
-                        shape = RoundedCornerShape(10.dp)
-                    ),
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+                if (isSearch.value) {
+                    OutlinedTextField(
+                        value = search.value,
+                        onValueChange = { search.value = it },
+
+                        placeholder = {
+                            Text(
+                                text = "Searching for...",
+                                fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5),
+                                color = Color.Gray
+                            )
+                        },
+                        textStyle = TextStyle(
+                            color = Color.Black,
+                            fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5)
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth(.9f)
+                            .border( // Add border
+                                width = 1.dp,
+                                color = Color.LightGray,
+                                shape = RoundedCornerShape(10.dp)
+                            ),
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
                 val dataList = if (search.value == "") viewModel.getData()
                     .collectAsState(initial = emptyList()) else viewModel.searchData(search.value)
@@ -392,7 +423,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                                 it.text,
                                                 Resulta::class.java
                                             ).summary,
-                                            maxLines = 4,
+                                            maxLines = 3,
                                             fontSize = MaterialTheme.typography.titleLarge.fontSize.div(
                                                 1.5
                                             )
@@ -438,33 +469,45 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                 onDismissRequest = { openSheet.value = false },
                 sheetState = rememberModalBottomSheetState()
             ) {
-                Column {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(10.dp, 0.dp)
-                            .height(40.dp)
+                            .height(56.dp)
                             .clickable {
                                 viewModel.deleteData(openSheetData)
                                 openSheet.value = false
-                            },
+                            }
+                            .padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Delete",
-                            fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5)
+                            text = "Delete",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Icon(
                             painter = painterResource(id = R.drawable.trash),
-                            contentDescription = ""
+                            contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
+                    Divider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                    )
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(40.dp)
-                            .padding(10.dp, 0.dp)
+                            .height(56.dp)
                             .clickable {
                                 val prefs =
                                     context.getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
@@ -473,25 +516,27 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                 editor.apply()
                                 openSheet.value = false
                                 navController.navigate(screen.VerifieScreen.name)
-                            },
+                            }
+                            .padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "View",
-                            fontSize = MaterialTheme.typography.titleLarge.fontSize.div(1.5)
+                            text = "View",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Icon(
                             painter = painterResource(id = R.drawable.overview),
-                            contentDescription = ""
+                            contentDescription = "View",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    Spacer(modifier = Modifier.height(40.dp))
                 }
             }
         }
     }
-
 
     when {
         openDialog.value -> {
@@ -581,7 +626,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                     textOptimize.value = textOptimize.value + " "
                                 }
                             }
-                            getResponse(textOptimize.value) {
+                            fetchResponse(textOptimize.value) {
                                 scan.value = extractJsonFromString(it)
                             }
                             Handler().postDelayed({
@@ -595,14 +640,17 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                     editor.putString("text_key", scan.value)
                                     editor.apply()
                                     openDialog.value = false
-                                    navController.navigate(screen.VerifieScreen.name)
+                                    val newText = scan.value
+                                    val newTime = System.currentTimeMillis()
+                                    val newImages = images.value
                                     viewModel.addData(
                                         Data(
-                                            text = scan.value,
-                                            time = System.currentTimeMillis(),
-                                            images = images.value
+                                            text = newText,
+                                            time = newTime,
+                                            images = newImages
                                         )
                                     )
+                                    navController.navigate(screen.VerifieScreen.name)
                                 } else {
                                     Toast.makeText(
                                         context,
@@ -610,8 +658,7 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
                                         Toast.LENGTH_LONG
                                     ).show()
                                 }
-                            }, 30000)
-
+                            }, 15000)
                         },
                         modifier = Modifier
                             .fillMaxWidth(),
@@ -629,7 +676,6 @@ fun HomeScreen(navController: NavHostController, viewModel: DataModelViewModel) 
         }
     }
 }
-
 
 @RequiresApi(Build.VERSION_CODES.P)
 @Preview(showSystemUi = true)

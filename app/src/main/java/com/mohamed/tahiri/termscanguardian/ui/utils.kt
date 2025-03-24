@@ -6,41 +6,37 @@ import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import org.json.JSONObject
+import com.google.ai.client.generativeai.GenerativeModel
+import com.mohamed.tahiri.termscanguardian.BuildConfig
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.io.IOException
 import java.io.InputStreamReader
 
-fun saveNameToFile(context: Context, name: String) {
-    val fileName = "fullName.txt"
-    val file = File(context.filesDir, fileName)
-    FileOutputStream(file).use {
-        it.write(name.toByteArray())
-    }
-}
-
-fun getNameFromFile(context: Context): String {
-    val fileName = "fullName.txt"
-    val file = File(context.filesDir, fileName)
-    return if (file.exists()) {
-        FileInputStream(file).use { inputStream ->
-            InputStreamReader(inputStream).use { reader ->
-                reader.readText()
-            }
-        }
-    } else {
-        ""
-    }
-}
+//fun saveNameToFile(context: Context, name: String) {
+//    val fileName = "fullName.txt"
+//    val file = File(context.filesDir, fileName)
+//    FileOutputStream(file).use {
+//        it.write(name.toByteArray())
+//    }
+//}
+//
+//fun getNameFromFile(context: Context): String {
+//    val fileName = "fullName.txt"
+//    val file = File(context.filesDir, fileName)
+//    return if (file.exists()) {
+//        FileInputStream(file).use { inputStream ->
+//            InputStreamReader(inputStream).use { reader ->
+//                reader.readText()
+//            }
+//        }
+//    } else {
+//        ""
+//    }
+//}
 
 fun extractJsonFromString(content: String): String {
     var firstIndex = 0
@@ -61,60 +57,100 @@ fun extractJsonFromString(content: String): String {
 }
 
 
-fun getResponse(question: String, callback: (String) -> Unit) {
-    val apiKey = ""
-    val url = "https://api.openai.com/v1/chat/completions"
+suspend fun getResponse(question: String, callback: (String) -> Unit) {
+
+    val generativeModel = GenerativeModel(
+        // The Gemini 1.5 models are versatile and work with most use cases
+        modelName = "gemini-1.5-flash",
+        // Access your API key as a Build Configuration variable (see "Set up your API key" above)
+        apiKey = BuildConfig.API_KEY
+    )
+
+
     val prompt =
-        "Please analyze and provide a sample summary for the following terms and conditions: $question Then, identify the sections with severity ratings and present the findings in the following format : json ( summary , sections( id(start from 0) ,title ,content,risk(low or middle or high)))"
-    val requestBody = """
-            {
-                "model": "gpt-3.5-turbo",
-                "messages": [
-                  {
-                    "role": "user",
-                    "content": "$prompt"
-                  }
-                ],
-                "temperature": 1,
-                "max_tokens": 500,
-                "top_p": 1,
-                "frequency_penalty": 0,
-                "presence_penalty": 0
-            }
-        """.trimIndent()
+        "Analyze the following terms and conditions and provide a concise summary that avoids repetition and minimizes word count and use same language for: $question Then, identify the sections with severity ratings and present the findings in the following format : json ( summary , sections( id(start from 0) ,title ,content,risk(low or middle or high)))"
 
-    val request = Request.Builder()
-        .url(url)
-        .addHeader("Content-Type", "application/json")
-        .addHeader("Authorization", "Bearer $apiKey")
-        .post(requestBody.toRequestBody("application/json".toMediaTypeOrNull()))
-        .build()
+    val response = generativeModel.generateContent(prompt)
+    Log.v("important", response.text.toString())
+    callback(response.text.toString())
 
-    OkHttpClient().newCall(request).enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {
-            Log.e("error", "API failed", e)
-        }
+    //    val apiKey = BuildConfig.API_KEY
+//    val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
 
-        override fun onResponse(call: Call, response: Response) {
-            val body = response.body?.string()
-            if (body != null) {
-                Log.v("data", body)
-            } else {
-                Log.v("data", "empty")
-            }
-            val jsonObject = body?.let { JSONObject(it) }
-            val choicesArray = jsonObject!!.getJSONArray("choices")
-            if (choicesArray.length() > 0) {
-                val choiceObject = choicesArray.getJSONObject(0)
-                val messageObject = choiceObject.getJSONObject("message")
-                val content = messageObject.getString("content")
-                callback(content.toString())
-            } else {
-                println("No choices found")
-            }
+//    val json = JSONObject().apply {
+//        put("contents", listOf(
+//            JSONObject().apply {
+//                put("parts", listOf(JSONObject().apply { put("text", prompt) }))
+//            }
+//        ))
+//    }
+//
+//    val requestBody = RequestBody.create(
+//        "application/json".toMediaTypeOrNull(), json.toString()
+//    )
+//
+//    val client = OkHttpClient()
+//    val request = Request.Builder()
+//        .url(url)
+//        .post(requestBody)
+//        .addHeader("Content-Type", "application/json")
+//        .build()
+
+//    client.newCall(request).enqueue(object : Callback {
+//        override fun onFailure(call: Call, e: IOException) {
+//            println("Request failed: ${e.message}")
+//        }
+//
+//        override fun onResponse(call: Call, response: Response) {
+//            response.use {
+//                if (!it.isSuccessful) {
+//                    println("Request failed: ${it.code()}")
+//                } else {
+//                    println("Response: ${it.body()?.string()}")
+//                }
+//            }
+//        }
+//    })
+
+//    client.newCall(request).enqueue(object : Callback {
+//        override fun onFailure(call: Call, e: IOException) {
+//            Log.e("error", "API failed", e)
+//        }
+//
+//        override fun onResponse(call: Call, response: Response) {
+//            val body = response.body?.string()
+//            if (body != null) {
+//                Log.v("data", body)
+//            } else {
+//                Log.v("data", "empty")
+//            }
+//            val jsonObject = body?.let { JSONObject(it) }
+//            val choicesArray = jsonObject!!.getJSONArray("choices")
+//            if (choicesArray.length() > 0) {
+//                val choiceObject = choicesArray.getJSONObject(0)
+//                val messageObject = choiceObject.getJSONObject("message")
+//                val content = messageObject.getString("content")
+//                callback(content.toString())
+//            } else {
+//                println("No choices found")
+//            }
+//        }
+//    }
+//  )
+
+}
+
+fun fetchResponse(question: String, callback: (String) -> Unit) {
+    // Launch a coroutine on the IO dispatcher (for network operations)
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            // Call the suspend function
+            getResponse(question, callback)
+        } catch (e: Exception) {
+            // Handle any errors
+            Log.e("Error", "Failed to get response: ${e.message}")
         }
     }
-    )
 }
 
 fun saveBitmapToFile(bitmap: Bitmap, outputFile: File) {
