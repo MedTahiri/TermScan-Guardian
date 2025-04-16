@@ -1,6 +1,6 @@
 
 <p align="center">
-<img src="screenshots/TermScan-Guardian.png" alt="1" height="500">
+<img src="TermScan-Guardian.jpg" alt="1" height="500">
 </p>
 
 # TermScan Guardian
